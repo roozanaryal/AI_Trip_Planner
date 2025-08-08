@@ -11,26 +11,44 @@ const menuItems = [
 
 function Header() {
   return (
-    <div className="flex justify-between items-center p-4 bg-gray-100 shadow-md">
-      <div className="flex gap-2 items-center">
-        <Image src={"/globe.svg"} alt="Logo" width={25} height={25} />
-        <h2 className="font-bold text-2xl">Trip Planner</h2>
-      </div>
-      <div className="flex gap-8 items-center">
-        {menuItems.map((menu, index) => (
-          <Link 
-            key={index} 
-            href={menu.href}
-            className="text-lg hover:scale-110 transition-all cursor-pointer"
+    <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-6">
+        {/* Brand */}
+        <Link href="/" className="flex items-center gap-2">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <Image src={"/globe.svg"} alt="Logo" width={18} height={18} />
+          </span>
+          <span className="text-xl font-extrabold tracking-tight">
+            AI Trip Planner
+          </span>
+        </Link>
+
+        {/* Nav */}
+        <nav className="hidden md:flex items-center gap-8">
+          {menuItems.map((menu) => (
+            <Link
+              key={menu.href}
+              href={menu.href}
+              className="text-sm font-medium text-foreground/70 hover:text-primary hover:scale-125 transition-all duration-200"
+            >
+              {menu.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* CTA */}
+        <div className="flex items-center gap-2">
+          <Button 
+            className="bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 transition-all duration-200 transform-gpu active:scale-95 shadow-md hover:shadow-lg"
           >
-            {menu.label}
-          </Link>
-        ))}
+            <span className="relative group">
+              <span className="absolute -inset-0.5 bg-primary-foreground/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition duration-200"></span>
+              <span className="relative">Get Started</span>
+            </span>
+          </Button>
+        </div>
       </div>
-      <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-        Get Started
-      </Button>
-    </div>
+    </header>
   );
 }
 
