@@ -38,9 +38,7 @@ function Header() {
 
         {/* CTA */}
         <div className="flex items-center gap-2">
-          <Button 
-            className="bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 transition-all duration-200 transform-gpu active:scale-95 shadow-md hover:shadow-lg"
-          >
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 transition-all duration-200 transform-gpu active:scale-95 shadow-md hover:shadow-lg">
             <span className="relative group">
               <span className="absolute -inset-0.5 bg-primary-foreground/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition duration-200"></span>
               <span className="relative">Get Started</span>
