@@ -1,4 +1,7 @@
+"use client";
+import { useUser } from "@clerk/nextjs";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 const SUGGESTIONS: { icon: string; label: string }[] = [
   { icon: "🧭", label: "Create New Trip" },
@@ -8,16 +11,26 @@ const SUGGESTIONS: { icon: string; label: string }[] = [
 ];
 
 function Hero() {
+  const { user } = useUser();
+  const router = useRouter();
   const chipClass =
     "inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 hover:shadow-sm";
+
+  const onSend = () => {
+    if (!user) {
+      router.push("/sign-in");
+
+      return;
+    }
+    //Navigate to creating a trip
+  };
 
   return (
     <section className="w-full pt-16 pb-10">
       {/* Heading */}
       <div className="max-w-3xl mx-auto text-center px-4">
         <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-          Hey, I'm your personal
-          {" "}
+          Hey, I'm your personal{" "}
           <span className="text-primary">Trip Planner</span>
         </h1>
         <p className="mt-4 text-gray-500 md:text-lg">
@@ -37,6 +50,7 @@ function Hero() {
           <button
             aria-label="Submit"
             className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition"
+            onClick={onSend}
           >
             {/* Paper plane icon (no external deps) */}
             <svg
