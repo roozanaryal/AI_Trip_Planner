@@ -19,10 +19,10 @@ function Hero() {
   const onSend = () => {
     if (!user) {
       router.push("/sign-in");
-
       return;
     }
     //Navigate to creating a trip
+    router.push("/create-new-trip");
   };
 
   return (
