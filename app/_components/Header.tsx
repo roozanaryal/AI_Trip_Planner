@@ -37,7 +37,6 @@ function Header() {
             </Link>
           ))}
         </nav>
-
         {/* CTA */}
         <div className="flex items-center gap-2">
           {user ? (
