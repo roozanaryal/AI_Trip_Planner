@@ -3,7 +3,7 @@ import ChatBox from "./_components/ChatBox";
 
 function CreateNewTrip() {
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Left Sidebar */}
       <div className="hidden lg:flex w-1/3 max-w-md border-r border-border bg-card p-6 overflow-y-auto">
         <div className="w-full">
@@ -66,7 +66,7 @@ function CreateNewTrip() {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col h-full">
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         <ChatBox />
       </div>
     </div>

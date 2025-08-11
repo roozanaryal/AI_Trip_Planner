@@ -84,9 +84,9 @@ function ChatBox() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background max-w-full">
+    <div className="flex flex-col h-full bg-background max-w-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center p-4 border-b border-border bg-card">
+      <div className="flex items-center p-4 border-b border-border bg-card flex-shrink-0">
         <button className="p-2 rounded-full hover:bg-accent transition-colors">
           <FiArrowLeft className="w-5 h-5 text-foreground" />
         </button>
@@ -124,7 +124,7 @@ function ChatBox() {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-border bg-card p-4">
+      <div className="border-t border-border bg-card p-4 flex-shrink-0">
         <div className="flex items-end gap-2">
           <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
             <FiSmile className="w-5 h-5" />

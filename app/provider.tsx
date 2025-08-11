@@ -27,6 +27,7 @@ function Provider({
     };
     void run();
   }, [user, CreateUser]);
+  
   return (
     <UserDetailContext.Provider value={userDetail}>
       <div>
