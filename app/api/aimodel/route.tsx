@@ -42,27 +42,56 @@ Once all required information is collected, generate and return a strict JSON re
 "ui": "budget/groupSize/TripDuration/Final"
 }`;
 export async function POST(req: NextRequest) {
+  console.log("AI Model API called");
+  
   // Validate API key early
   if (!process.env.OPEN_ROUTER_API_KEY) {
+    console.error("Missing OPEN_ROUTER_API_KEY server environment variable");
     return NextResponse.json(
       { error: "Missing OPEN_ROUTER_API_KEY server environment variable" },
       { status: 500 }
     );
   }
 
+  // Log API key info (first 4 and last 4 characters only for security)
+  const apiKey = process.env.OPEN_ROUTER_API_KEY;
+  console.log("API Key present:", !!apiKey);
+  if (apiKey) {
+    console.log("API Key length:", apiKey.length);
+    console.log("API Key (masked):", apiKey.substring(0, 4) + "..." + apiKey.substring(apiKey.length - 4));
+  }
+
   // Validate request body
-  const body = await req.json().catch(() => null as any);
+  const body = await req.json().catch((error) => {
+    console.error("Failed to parse request body:", error);
+    return null;
+  });
+  
+  console.log("Request body:", JSON.stringify(body, null, 2));
+  
   const messages = (body && body.messages) || [];
   if (!Array.isArray(messages)) {
+    console.error("Invalid request: 'messages' must be an array");
     return NextResponse.json(
       { error: "Invalid request: 'messages' must be an array" },
       { status: 400 }
     );
   }
+  
+  console.log("Messages to send to AI:", JSON.stringify(messages, null, 2));
 
   try {
+    console.log("Calling OpenAI API with model: tngtech/deepseek-r1t2-chimera:free");
+    console.log("Messages being sent:", [
+      {
+        role: "system",
+        content: PROMPT,
+      },
+      ...messages,
+    ]);
+    
     const completion = await openai.chat.completions.create({
-      model: "deepseek/deepseek-r1-0528:free",
+      model: "tngtech/deepseek-r1t2-chimera:free",
       messages: [
         {
           role: "system",
@@ -73,8 +102,12 @@ export async function POST(req: NextRequest) {
       response_format: { type: "json_object" },
       temperature: 0.3,
     });
+    
+    console.log("OpenAI API response:", JSON.stringify(completion, null, 2));
+    
     const message = completion.choices?.[0]?.message;
     if (!message?.content) {
+      console.error("No content returned from the model");
       return NextResponse.json(
         { error: "No content returned from the model" },
         { status: 502 }
@@ -84,6 +117,7 @@ export async function POST(req: NextRequest) {
     // Strictly parse JSON returned by the model
     try {
       const data = JSON.parse(message.content);
+      console.log("Parsed JSON response:", data);
       return NextResponse.json(data);
     } catch (parseErr) {
       console.error("Model returned non-JSON content:", message.content);
@@ -92,8 +126,52 @@ export async function POST(req: NextRequest) {
         { status: 502 }
       );
     }
-  } catch (e) {
-    console.error(e);
+  } catch (e: any) {
+    console.error("Error calling OpenAI API:", e);
+    console.error("Error name:", e?.name);
+    console.error("Error message:", e?.message);
+    console.error("Error stack:", e?.stack);
+    console.error("Error status:", e?.status);
+    console.error("Error response:", e?.response);
+    
+    // Handle rate limit errors specifically
+    if (e.status === 429 || (e.message && e.message.includes('rate limit'))) {
+      console.log("Rate limit error detected");
+      return NextResponse.json(
+        { 
+          error: "Rate limit exceeded", 
+          message: "Too many requests. Please wait a moment and try again.",
+          retryAfter: e.headers?.get('Retry-After') || 60
+        },
+        { status: 429 }
+      );
+    }
+    
+    // Handle provider errors specifically
+    if (e?.response?.status === 502 || e?.status === 502) {
+      console.error("Provider returned error:", e?.response?.data || e?.message);
+      return NextResponse.json(
+        { 
+          error: "Provider Error", 
+          message: "The AI provider returned an error. This might be due to temporary issues with the service.",
+          details: e?.response?.data || e?.message
+        },
+        { status: 502 }
+      );
+    }
+    
+    // Handle authentication errors
+    if (e?.status === 401) {
+      console.error("Authentication error with OpenRouter API");
+      return NextResponse.json(
+        { 
+          error: "Authentication Error", 
+          message: "There was an issue authenticating with the AI service. Please check your API key."
+        },
+        { status: 401 }
+      );
+    }
+    
     const errMsg = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json(
       { error: "Internal Server Error", message: errMsg },

@@ -13,7 +13,7 @@ function ChatBox() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hello! I'm your AI travel assistant. How can I help you plan your trip?",
+      text: "Hello! I'm your AI travel assistant. I can help you plan your trip by asking questions about your destination, travel dates, budget, and interests. What would you like to do?",
       sender: 'ai'
     }
   ]);
@@ -25,7 +25,10 @@ function ChatBox() {
     listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = async () => {
+  const handleSend = async (retryCount = 0) => {
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+    
     if (!input.trim()) return;
 
     // Add user message
@@ -39,37 +42,85 @@ function ChatBox() {
     setInput("");
 
     try {
+      console.log("Sending request to AI API with messages:", [...messages, userMessage]);
+      
       const response = await fetch("/api/aimodel", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt: input }),
+        body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
 
+      console.log("API Response status:", response.status);
+      console.log("API Response headers:", [...response.headers.entries()]);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error("API Error response body:", errorText);
+        
+        // Check if we should retry on rate limit
+        if (response.status === 429 && retryCount < maxRetries) {
+          const retryAfter = response.headers.get('Retry-After');
+          const delay = retryAfter ? parseInt(retryAfter) * 1000 : baseDelay * Math.pow(2, retryCount);
+          
+          console.log(`Rate limit detected. Retrying in ${delay}ms`);
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          // Remove the user message we added since we're retrying
+          setMessages(prev => prev.slice(0, -1));
+          
+          // Retry the request
+          return handleSend(retryCount + 1);
+        }
+        
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log("API Response:", data);
+      console.log("API Response data:", data);
 
       // Add AI response
       setMessages((prev) => [
         ...prev,
         {
           id: prev.length + 1,
-          text: data.text || "Sorry, I couldn't process that request.",
+          text: data.resp || "Sorry, I couldn't process that request. Please try again.",
           sender: 'ai',
         },
       ]);
       // Optionally: use data.ui to control UI state if needed
     } catch (e: any) {
+      console.error("Client-side error:", e);
+      let errorMessage = e?.message || 'An error occurred while contacting the AI.';
+      
+      // Handle rate limit errors specifically
+      if ((e?.status === 429 || (e?.message && e.message.includes('rate limit'))) && retryCount < maxRetries) {
+        const retryAfter = e?.retryAfter || 60;
+        const delay = retryAfter * 1000;
+        
+        console.log(`Rate limit error detected. Retrying in ${delay}ms`);
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        // Remove the user message we added since we're retrying
+        setMessages(prev => prev.slice(0, -1));
+        
+        // Retry the request
+        return handleSend(retryCount + 1);
+      } else if (e?.status === 429 || (e?.message && e.message.includes('rate limit'))) {
+        errorMessage = `Rate limit exceeded. Please wait a moment and try again.`;
+      }
+      
+      console.error("Displaying error to user:", errorMessage);
       setMessages((prev) => [
         ...prev,
         {
           id: prev.length + 1,
-          text: e?.message || 'An error occurred while contacting the AI.',
+          text: errorMessage,
           sender: 'ai',
         },
       ]);
@@ -140,7 +191,7 @@ function ChatBox() {
             />
           </div>
           <button
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!input.trim()}
             className="p-3 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
           >
